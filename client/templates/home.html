@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client App</title>
+</head>
+<body>
+    <h1>Client App - Cryptographic System</h1>
+    <h2>Select your encryption method</h2>
+    <form action="handshake" method = "POST">
+        <label for="encryption">Encryption method: </label>
+        <select name="encryption" id="encryption">
+          <option value="symmetric">symmetric</option>
+          <option value="asymmetric">asymmetric</option>
+        </select>
+        <br><br>
+        <input type="submit" value="Handshake">
+    </form>
+</body>
+</html>
