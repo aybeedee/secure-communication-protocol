@@ -5,6 +5,10 @@ import hashlib
 import json
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from colorama import Fore, Style
 import os
 from dotenv import load_dotenv
@@ -13,10 +17,11 @@ load_dotenv()
 
 CERTIFICATE_FILE = os.getenv('CERTIFICATE_FILE')
 PUBLIC_KEY_FILE = os.getenv('PUBLIC_KEY_FILE')
+PRIVATE_KEY_FILE = os.getenv('PRIVATE_KEY_FILE')
 ROOT_FILE = os.getenv('ROOT_FILE')
 
 encryption_method = None
-message = None
+decrypted_client_message = None
 
 def generate_private_key():
     return random.randint(2, p - 2)
@@ -43,6 +48,17 @@ def encrypt(message, e, n):
         encrypted_char = pow(char_value, e, n)
         ciphertext.append(encrypted_char)
     return ciphertext
+
+def decrypt(cipher_text, private_key):
+    decrypted_message = private_key.decrypt(
+        cipher_text,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return decrypted_message
 
 client_public_exponent = None
 client_n = None
@@ -106,7 +122,7 @@ def handshake():
 @app.route("/message", methods = ["POST"])
 def message():
     if (encryption_method == "symmetric"):
-        global message
+        global decrypted_client_message
         request_data = json.loads(request.data.decode())
         print(Fore.GREEN, "RECEIVED CIPHER TEXT")
         print(Fore.YELLOW, "RECEIVED MESSAGE HASH")
@@ -123,7 +139,7 @@ def message():
             print(Fore.YELLOW, "HASH MATCHED SUCCESSFULLY, INTEGRITY MAINTAINED")
         else:
             print(Fore.LIGHTCYAN_EX, "HASH DOES NOT MATCH, INTEGRITY BREACHED")
-        message = decrypted_message.decode()
+        decrypted_client_message = decrypted_message.decode()
         print(Style.RESET_ALL)
         res_json = {
             "response": "success"
@@ -132,7 +148,11 @@ def message():
         request_data = json.loads(request.data.decode())
         print(Fore.GREEN, "RECEIVED CIPHER TEXT")
         cipher_text = request_data["cipher_text"].encode('latin-1')
-        print(cipher_text)
+        with open('9c07820d0f6ac831c26454761500d0e6c293161a8eed6526b077ecb7e72c1100-private.pem.key', 'rb') as key_file:
+            private_key = load_pem_private_key(key_file.read(), password=None, backend=default_backend())
+        decrypted_message = decrypt(cipher_text, private_key)
+        print(Fore.YELLOW, "DECRYPTED MESSAGE WITH SERVER PRIVATE KEY")
+        decrypted_client_message = decrypted_message.decode()
         print(Style.RESET_ALL)
         res_json = {
             "response": "success"
@@ -143,7 +163,7 @@ def message():
 def receive():
     print(Fore.LIGHTMAGENTA_EX, "READING DECRYPTED MESSAGE")
     print(Style.RESET_ALL)
-    return f"Received message (decrypted): {message}"
+    return f"Received message (decrypted): {decrypted_client_message}"
 
 if __name__ == "__main__":
     app.run(port = 5002)

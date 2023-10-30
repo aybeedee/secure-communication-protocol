@@ -174,7 +174,6 @@ def message():
             public_key = load_pem_public_key(key_file.read(), backend=default_backend())
             cipher_text = encrypt(plain_text, public_key)
             print(Fore.YELLOW, "ENCRYPTED MESSAGE WITH SERVER PUBLIC KEY")
-            print(cipher_text)
             res = requests.post("http://localhost:5002/message", json = {
                 "cipher_text": cipher_text.decode('latin-1')
             })
