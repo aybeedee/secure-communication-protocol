@@ -11,6 +11,7 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.x509 import load_pem_x509_certificate
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 
 encryption_method = None
 
@@ -78,6 +79,17 @@ def mod_inverse(a, m):
         x0, x1 = x1 - q * x0, x0
     return x1 + m0 if x1 < 0 else x1
 
+def encrypt(message, public_key):
+    cipher_text = public_key.encrypt(
+        message,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return cipher_text
+
 def decrypt(ciphertext, d, n):
     plaintext = []
     for char_value in ciphertext:
@@ -139,8 +151,8 @@ def handshake():
 @app.route("/message", methods = ["POST"])
 def message():
     plain_text = request.form["plain_text"]
+    plain_text = plain_text.encode('utf-8')
     if (encryption_method == "symmetric"):
-        plain_text = plain_text.encode('utf-8')
         cipher = AES.new(shared_secret_client, AES.MODE_CBC)
         message_hash = hashlib.sha256(plain_text).digest()
         plain_text = pad(plain_text, AES.block_size)
@@ -157,7 +169,19 @@ def message():
         print(Fore.GREEN, "SENT CIPHER IV TO SERVER")
         print(Style.RESET_ALL)
         return make_response("<p>Message encrypted and sent successfully.</p>")
-    
+    elif (encryption_method == "asymmetric"):
+        with open('public_key.pem.key', 'rb') as key_file:
+            public_key = load_pem_public_key(key_file.read(), backend=default_backend())
+            cipher_text = encrypt(plain_text, public_key)
+            print(Fore.YELLOW, "ENCRYPTED MESSAGE WITH SERVER PUBLIC KEY")
+            print(cipher_text)
+            res = requests.post("http://localhost:5002/message", json = {
+                "cipher_text": cipher_text.decode('latin-1')
+            })
+            print(Fore.GREEN, "SENT MESSAGE TO SERVER")
+            print(Style.RESET_ALL)
+            return f"{res.json()}"
+
 @app.route("/certificates", methods = ["POST"])
 def certificates():
     certificate = request.files['cert']
@@ -169,12 +193,10 @@ def certificates():
     print(Fore.LIGHTCYAN_EX, "RECEIVED CERTIFICATES FROM SERVER")
     with open("certificate.pem.crt", "rb") as cert_file:
         verify_certificate = load_pem_x509_certificate(cert_file.read(), default_backend())
-    with open("public_key.pem.key", "rb") as key_file:
-        verify_public_key = load_pem_public_key(key_file.read(), default_backend())
     root_certs = []
     with open("root.pem", "rb") as root_cert_file:
         root_certs.append(load_pem_x509_certificate(root_cert_file.read(), default_backend()))
-    print(Fore.LIGHTMAGENTA_EX, "LOADED SERVER CERTIFICATES")
+    print(Fore.LIGHTMAGENTA_EX, "LOADED CERTIFICATES")
     try:
         verify_certificate.public_key().verify(
             verify_certificate.signature,
@@ -187,7 +209,7 @@ def certificates():
     subject = verify_certificate.subject
     validity = verify_certificate.not_valid_after
     common_name = subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-    print(Fore.LIGHTMAGENTA_EX, "VERIFYING SERVER CERTIFICATES")
+    print(Fore.YELLOW, "VERIFYING SERVER CERTIFICATES")
     print(f"SUBJECT: {subject}")
     print(f"VALIDITY: {validity}")
     print(f"COMMON NAME: {common_name}")

@@ -126,7 +126,16 @@ def message():
         message = decrypted_message.decode()
         print(Style.RESET_ALL)
         res_json = {
-            "response": "apple"
+            "response": "success"
+        }
+    elif (encryption_method == "asymmetric"):
+        request_data = json.loads(request.data.decode())
+        print(Fore.GREEN, "RECEIVED CIPHER TEXT")
+        cipher_text = request_data["cipher_text"].encode('latin-1')
+        print(cipher_text)
+        print(Style.RESET_ALL)
+        res_json = {
+            "response": "success"
         }
     return jsonify(res_json)
 
