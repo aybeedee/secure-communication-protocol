@@ -11,8 +11,8 @@ A simple client-server secure communication system for message exchange built us
 
 ## Local Setup
 
-- Navigate to the `server` folder and add files for a certificate, a respective public key and root certificate by generating or acquiring these files
-- In the same folder, create a `.env` file and set the paths/filenames to the above mentioned files with the following variable names respectively: `CERTIFICATE_FILE`, `PUBLIC_KEY_FILE` and `ROOT_FILE`
+- Navigate to the `server` folder and add files for a certificate, a respective public key, private key and root certificate by generating or acquiring these files (recommended formats are `*.pem.cert`, `*.pem.key` and `*.pem` respectively)
+- In the same folder, create a `.env` file and set the paths/filenames to the above mentioned files with the following variable names respectively: `CERTIFICATE_FILE`, `PUBLIC_KEY_FILE`, `PRIVATE_KEY_FILE` and `ROOT_FILE`
 - Navigate to the `client` folder and execut the following command `python app.py`
 - Navigate to the `server` folder and execute the following command `python app.py`
 - Open a web browser of your choice (preferably Google Chrome) and enter the following URLs in two different tabs: `http://localhost:5001` and `http://localhost:5002`
