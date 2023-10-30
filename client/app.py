@@ -182,7 +182,8 @@ def message():
             print(Fore.LIGHTCYAN_EX, "SENT MESSAGE TO SERVER")
             print(Fore.LIGHTMAGENTA_EX, "SENT MESSAGE HASH TO SERVER")
             print(Style.RESET_ALL)
-            return f"{res.json()}"
+            decrypted_server_message = decrypt(res.json()["response"], d, n)
+            return f"SERVER RESPONSE: {res.json()}\nDECRYPTED MESSAGE: {decrypted_server_message}"
 
 @app.route("/certificates", methods = ["POST"])
 def certificates():

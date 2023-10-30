@@ -161,10 +161,12 @@ def message():
         else:
             print(Fore.GREEN, "HASH DOES NOT MATCH, INTEGRITY BREACHED")
         decrypted_client_message = decrypted_message.decode()
-        print(Style.RESET_ALL)
+        encrypted_response = encrypt("RESPONSE FROM SERVER", client_public_exponent, client_n)
         res_json = {
-            "response": "success"
+            "response": encrypted_response
         }
+        print(Fore.YELLOW, "RESPONDED WITH MESSAGE ENCRYPTED WITH CLIENT PUBLIC KEY")
+        print(Style.RESET_ALL)
     return jsonify(res_json)
 
 @app.route("/receive", methods = ["POST"])
