@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives import hashes
 
 encryption_method = None
 
+# Diffie Hellman key exchange helper functions
 def generate_private_key():
     return random.randint(2, p - 2)
 
@@ -26,6 +27,7 @@ def compute_shared_secret(private_key, received_public_key):
     shared_secret_bytes = hashlib.sha256(str(shared_secret).encode()).digest()
     return shared_secret_bytes
 
+# Diffie Hellman variables
 p = 23
 alpha = 5
 server_public_key = None
@@ -34,6 +36,7 @@ shared_secret_client = None
 client_private_key = generate_private_key()
 client_public_key = compute_public_key(client_private_key)
 
+# RSA helper functions
 def generate_prime(bits):
     while True:
         num = random.getrandbits(bits)
@@ -79,6 +82,7 @@ def mod_inverse(a, m):
         x0, x1 = x1 - q * x0, x0
     return x1 + m0 if x1 < 0 else x1
 
+# asymmetric encryption using server public key
 def encrypt(message, public_key):
     cipher_text = public_key.encrypt(
         message,
@@ -90,6 +94,7 @@ def encrypt(message, public_key):
     )
     return cipher_text
 
+# asymmetric decryption using client private key
 def decrypt(ciphertext, d, n):
     plaintext = []
     for char_value in ciphertext:
@@ -98,6 +103,7 @@ def decrypt(ciphertext, d, n):
         plaintext.append(decrypted_char)
     return ''.join(plaintext)
 
+#RSA variables
 bits = 10
 
 p = generate_prime(bits)
@@ -108,10 +114,12 @@ d = calculate_private_exponent(e, phi_n)
 
 app = Flask(__name__)
 
+# index page
 @app.route('/')
 def index():
     return render_template("home.html")
 
+# handshake - share encryption variables
 @app.route("/handshake", methods = ["POST"])
 def handshake():
     encryption = request.form["encryption"]
@@ -148,6 +156,7 @@ def handshake():
         print(Style.RESET_ALL)
     return render_template("message.html")
 
+# encrypt and send message
 @app.route("/message", methods = ["POST"])
 def message():
     plain_text = request.form["plain_text"]
@@ -185,6 +194,7 @@ def message():
             decrypted_server_message = decrypt(res.json()["response"], d, n)
             return f"SERVER RESPONSE: {res.json()}\nDECRYPTED MESSAGE: {decrypted_server_message}"
 
+# receive and verify certificates
 @app.route("/certificates", methods = ["POST"])
 def certificates():
     certificate = request.files['cert']

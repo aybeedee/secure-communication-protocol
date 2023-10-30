@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# environment variables for certificate files
 CERTIFICATE_FILE = os.getenv('CERTIFICATE_FILE')
 PUBLIC_KEY_FILE = os.getenv('PUBLIC_KEY_FILE')
 PRIVATE_KEY_FILE = os.getenv('PRIVATE_KEY_FILE')
@@ -23,6 +24,7 @@ ROOT_FILE = os.getenv('ROOT_FILE')
 encryption_method = None
 decrypted_client_message = None
 
+# Diffie Hellman key exchange helper functions
 def generate_private_key():
     return random.randint(2, p - 2)
 
@@ -34,6 +36,7 @@ def compute_shared_secret(private_key, received_public_key):
     shared_secret_bytes = hashlib.sha256(str(shared_secret).encode()).digest()
     return shared_secret_bytes
 
+# Diffie Hellman variables
 p = None
 alpha = None
 server_private_key = None
@@ -41,6 +44,7 @@ server_public_key = None
 client_public_key = None
 shared_secret_server = None
 
+# asymmetric encryption using client public key
 def encrypt(message, e, n):
     ciphertext = []
     for char in message:
@@ -49,6 +53,7 @@ def encrypt(message, e, n):
         ciphertext.append(encrypted_char)
     return ciphertext
 
+# asymmetric decryption using server private key
 def decrypt(cipher_text, private_key):
     decrypted_message = private_key.decrypt(
         cipher_text,
@@ -60,15 +65,18 @@ def decrypt(cipher_text, private_key):
     )
     return decrypted_message
 
+#RSA variables
 client_public_exponent = None
 client_n = None
 
 app = Flask(__name__)
 
+# index page
 @app.route('/')
 def index():
     return render_template("index.html")
 
+# handshake - share variables/certificates
 @app.route("/handshake", methods = ["POST"])
 def handshake():
     request_data = json.loads(request.data.decode())
@@ -119,6 +127,7 @@ def handshake():
         print(Style.RESET_ALL)
     return jsonify(res_json)
 
+# receive and decrypt message, respond to client
 @app.route("/message", methods = ["POST"])
 def message():
     if (encryption_method == "symmetric"):
@@ -169,6 +178,7 @@ def message():
         print(Style.RESET_ALL)
     return jsonify(res_json)
 
+# view message
 @app.route("/receive", methods = ["POST"])
 def receive():
     print(Fore.LIGHTMAGENTA_EX, "READING DECRYPTED MESSAGE")
