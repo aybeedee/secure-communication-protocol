@@ -165,19 +165,22 @@ def message():
             "message_hash": message_hash.decode('latin-1')
         })
         print(Fore.LIGHTMAGENTA_EX, "SENT CIPHER TEXT TO SERVER")
-        print(Fore.YELLOW, "SENT MESSAGE HASH TO SERVER")
-        print(Fore.GREEN, "SENT CIPHER IV TO SERVER")
+        print(Fore.GREEN, "SENT MESSAGE HASH TO SERVER")
+        print(Fore.YELLOW, "SENT CIPHER IV TO SERVER")
         print(Style.RESET_ALL)
         return make_response("<p>Message encrypted and sent successfully.</p>")
     elif (encryption_method == "asymmetric"):
         with open('public_key.pem.key', 'rb') as key_file:
             public_key = load_pem_public_key(key_file.read(), backend=default_backend())
             cipher_text = encrypt(plain_text, public_key)
+            message_hash = hashlib.sha256(plain_text).digest()
             print(Fore.YELLOW, "ENCRYPTED MESSAGE WITH SERVER PUBLIC KEY")
             res = requests.post("http://localhost:5002/message", json = {
-                "cipher_text": cipher_text.decode('latin-1')
+                "cipher_text": cipher_text.decode('latin-1'),
+                "message_hash": message_hash.decode('latin-1')
             })
-            print(Fore.GREEN, "SENT MESSAGE TO SERVER")
+            print(Fore.LIGHTCYAN_EX, "SENT MESSAGE TO SERVER")
+            print(Fore.LIGHTMAGENTA_EX, "SENT MESSAGE HASH TO SERVER")
             print(Style.RESET_ALL)
             return f"{res.json()}"
 

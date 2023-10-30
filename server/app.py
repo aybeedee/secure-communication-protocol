@@ -147,11 +147,19 @@ def message():
     elif (encryption_method == "asymmetric"):
         request_data = json.loads(request.data.decode())
         print(Fore.GREEN, "RECEIVED CIPHER TEXT")
+        print(Fore.YELLOW, "RECEIVED MESSAGE HASH")
         cipher_text = request_data["cipher_text"].encode('latin-1')
+        client_message_hash = request_data["message_hash"].encode('latin-1')
         with open('9c07820d0f6ac831c26454761500d0e6c293161a8eed6526b077ecb7e72c1100-private.pem.key', 'rb') as key_file:
             private_key = load_pem_private_key(key_file.read(), password=None, backend=default_backend())
         decrypted_message = decrypt(cipher_text, private_key)
-        print(Fore.YELLOW, "DECRYPTED MESSAGE WITH SERVER PRIVATE KEY")
+        print(Fore.LIGHTCYAN_EX, "DECRYPTED MESSAGE WITH SERVER PRIVATE KEY")
+        server_message_hash = hashlib.sha256(decrypted_message).digest()
+        print(Fore.LIGHTMAGENTA_EX, "GENERATED MESSAGE HASH")
+        if (server_message_hash == client_message_hash):
+            print(Fore.GREEN, "HASH MATCHED SUCCESSFULLY, INTEGRITY MAINTAINED")
+        else:
+            print(Fore.GREEN, "HASH DOES NOT MATCH, INTEGRITY BREACHED")
         decrypted_client_message = decrypted_message.decode()
         print(Style.RESET_ALL)
         res_json = {
