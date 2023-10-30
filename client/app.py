@@ -133,6 +133,7 @@ def handshake():
         print(Fore.LIGHTMAGENTA_EX, "SENT ENCRYPTION METHOD TO SERVER")
         print(Fore.GREEN, "SENT VALUE OF PUBLIC EXPONENT TO SERVER")
         print(Fore.YELLOW, "SENT VALUE OF N TO SERVER")
+        print(Style.RESET_ALL)
     return render_template("message.html")
 
 @app.route("/message", methods = ["POST"])
@@ -166,6 +167,31 @@ def certificates():
     public_key.save('public_key.pem.key')
     root.save('root.pem')
     print(Fore.LIGHTCYAN_EX, "RECEIVED CERTIFICATES FROM SERVER")
+    with open("certificate.pem.crt", "rb") as cert_file:
+        verify_certificate = load_pem_x509_certificate(cert_file.read(), default_backend())
+    with open("public_key.pem.key", "rb") as key_file:
+        verify_public_key = load_pem_public_key(key_file.read(), default_backend())
+    root_certs = []
+    with open("root.pem", "rb") as root_cert_file:
+        root_certs.append(load_pem_x509_certificate(root_cert_file.read(), default_backend()))
+    print(Fore.LIGHTMAGENTA_EX, "LOADED SERVER CERTIFICATES")
+    try:
+        verify_certificate.public_key().verify(
+            verify_certificate.signature,
+            verify_certificate.tbs_certificate_bytes,
+            padding.PKCS1v15(),
+            verify_certificate.signature_hash_algorithm,
+        )
+    except Exception as e:
+        print(e)
+    subject = verify_certificate.subject
+    validity = verify_certificate.not_valid_after
+    common_name = subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    print(Fore.LIGHTMAGENTA_EX, "VERIFYING SERVER CERTIFICATES")
+    print(f"SUBJECT: {subject}")
+    print(f"VALIDITY: {validity}")
+    print(f"COMMON NAME: {common_name}")
+    print(Style.RESET_ALL)
     return jsonify(message="Certificate and key files received")
 
 if __name__ == "__main__":
